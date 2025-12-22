@@ -1,0 +1,201 @@
+{
+  "name": "Working voice agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5136645e-4ecf-473a-be17-061519a529c1",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        -64
+      ],
+      "id": "f13a4a62-85d2-497e-81e1-e3c2dcbec315",
+      "name": "Webhook",
+      "webhookId": "5136645e-4ecf-473a-be17-061519a529c1"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        992,
+        -48
+      ],
+      "id": "1818dcc2-70d3-486b-b65c-a59a723732e0",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1SETAxhHyDfeqw1CdV7eyFxUOFzncECajKBBp7LiE9CI/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Clinic Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SETAxhHyDfeqw1CdV7eyFxUOFzncECajKBBp7LiE9CI/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        176
+      ],
+      "id": "16962647-71f6-4e45-88e1-16f7628546d0",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nYIXgHksj4fOCMm0",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        464,
+        160
+      ],
+      "id": "6bae1099-b6a6-45c1-9182-a77ec5a90e6d",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "4kOmfQnRyfQAQUGe",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body }}",
+        "options": {
+          "systemMessage": "=You are an automated AI receptionist for an acupuncture clinic.\n\nCURRENT DATE: {{ $now.setZone('America/New_York').toFormat('yyyy-MM-dd') }}\nCURRENT TIME: {{ $now.setZone('America/New_York').toFormat('HH:mm') }}\nTIMEZONE: America/New_York\n\n\nAVAILABLE SERVICES: Acupuncture, Microneedling, Herbal Medicine, Phototherapy, Massage Therapy, Manual Therapy\n\nTOOLS:\n- Google Sheets: for information requests\n- Google Calendar: for booking appointments\n\nRULES:\n\nFOR INFORMATION REQUESTS:\n- Use Google Sheets tool\n- Return natural text only\n- NO JSON format\n\nFOR APPOINTMENT BOOKING:\nif someone provides all the necessary details, USE THE GOOGLE CALENDAR TOOL WITHOUT ASKING ANY QUESTIONS.\n1. Extract service name from the user's message.\n2. Extract date AND time requested for the booking.\n3. If BOTH date AND time are provided:\n   - Convert to ISO 8601: YYYY-MM-DDTHH:MM:SS\n   - Use standard durations:\n     • Acupuncture: 60 minutes\n     • Herbal Medicine: 40 minutes\n     • Phototherapy: 30 minutes\n     • Massage/Manual Therapy: 60 minutes\n     • Microneedling: 45 minutes\n   - If only a day is provided (e.g., \"Friday\"), choose the upcoming date for that day.\n   - **Immediately create the event in Google Calendar using the booking details.**\n   - Output ONLY the following JSON (NO OTHER TEXT):\n\n{\n  \"action\": \"create\",\n  \"summary\": \"[Service] Appointment\",\n  \"start_dateTime\": \"YYYY-MM-DDTHH:MM:SS\",\n  \"duration_in_minutes\": 60,\n  \"timezone\": \"America/New_York\"\n}\n\n4. If either date OR time is missing:\n   - Ask ONLY: \"Please provide the date and time for your appointment.\"\n\nEXAMPLES:\n\nUser: \"Book acupuncture tomorrow at 2pm\"\nOutput: {\n  \"action\": \"create\",\n  \"summary\": \"Acupuncture Appointment\",\n  \"start_dateTime\": \"2025-12-09T14:00:00\",\n  \"duration_in_minutes\": 60,\n  \"timezone\": \"America/New_York\"\n}\n\nUser: \"I want acupuncture\"\nOutput: \"Please provide the date and time for your acupuncture appointment\"\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        576,
+        -64
+      ],
+      "id": "5cf50989-d5fe-4bc6-bb7f-62ffa28ff78b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "558299cb9feef0669a9b61d8ec5bf6f0f5bade0d046790b2eb495f29058c95c0@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Acupunture boking "
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        176
+      ],
+      "id": "84c156ff-53ff-4885-a97a-b9ee06a8619a",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "7BGcoU6ib3fjSN5U",
+          "name": "Google Calendar account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2dd017c4-9674-4532-b673-bbfd7310798c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "31b7d9749145354af16e9af752a1ab365f1a4cf8853af8c2e94bc9b03b034dc7"
+  },
+  "id": "wYnPeuWVDaBMQbBX",
+  "tags": []
+}
